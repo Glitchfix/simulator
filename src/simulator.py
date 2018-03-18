@@ -73,7 +73,7 @@ class Simulator():
         else:
             return team_size
 
-    def run_a_splitter(self):
+    def run_a_splitter(self,id):
         Common.BUFFER_SIZE = self.get_buffer_size()
         if self.set_of_rules == "dbs":
             splitter = Splitter_DBS()
@@ -81,6 +81,8 @@ class Simulator():
             splitter = Splitter_STRPEDS()
         elif self.set_of_rules == "cis-sss":
             splitter = Splitter_SSS()
+        elif self.set_of_rules == "tcs":
+            splitter = Splitter_DBS(id)	
 
         # splitter.start()
         splitter.run()
@@ -115,6 +117,9 @@ class Simulator():
                 peer = Peer_STRPEDS(id)
             elif self.set_of_rules == "cis-sss":
                 peer = Peer_SSS(id)
+            elif self.set_of_rules == "tcs":
+                print("Okay done here")
+                peer=Peer_DBS("T")
         self.lg.info("simulator: {}: alive till consuming {} chunks".format(id, chunks_before_leave))
 
         peer.chunks_before_leave = chunks_before_leave
@@ -197,9 +202,17 @@ class Simulator():
         # sim.LOCK = Semaphore()
 
         # run splitter
-        p = Process(target=self.run_a_splitter)
+        p = Process(target=self.run_a_splitter,args=["S0"])
         p.start()
-        self.processes["S"] = p.pid
+        self.processes["S0"] = p.pid
+        self.attended_monitors = 0
+        self.attended_peers = 0
+        self.attended_mps = 0
+        
+        # run splitter
+        p = Process(target=self.run_a_splitter,args=["S1"])
+        p.start()
+        self.processes["S1"] = p.pid
         self.attended_monitors = 0
         self.attended_peers = 0
         self.attended_mps = 0

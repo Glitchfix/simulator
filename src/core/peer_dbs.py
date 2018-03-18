@@ -36,7 +36,7 @@ class Peer_DBS(sim):
     CHUNK = 1
     ORIGIN = 2
 
-    def __init__(self, id):
+    def __init__(self, id="S"):
 
         # lg.basicConfig(level=lg.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
         self.lg = logging.getLogger(__name__)
@@ -189,7 +189,15 @@ class Peer_DBS(sim):
             # messages. Randomization could be produced at this instant in
             # the splitter, if necessary.
 
+    def get_splitter(self):
+        self.splitter_socket.send("*PT")
+        msg=self.splitter_socket.recv()
+        self.id=msg
+        self.splitter_socket.close()
+        self.connect_to_the_splitter()
+		
     def connect_to_the_splitter(self):
+        
         self.splitter_socket = socket(socket.AF_UNIX, socket.SOCK_STREAM)
         # self.splitter_socket.set_id(self.id) # Ojo, simulation dependant
         self.splitter_socket.bind(self.id)
@@ -198,7 +206,9 @@ class Peer_DBS(sim):
         except ConnectionRefusedError as e:
             self.lg.error("{}: {}".format(self.id, e))
             raise
-
+            
+        if self.id=="T":
+            self.get_splitter()
         self.lg.info("{}: connected to the splitter".format(self.id))
 
     def send_ready_for_receiving_chunks(self):
@@ -592,6 +602,8 @@ class Peer_DBS(sim):
         self.lg.info("{}: see you later!".format(self.id))
 
     def run(self):
+        if self.id=="T":
+            self.get_splitter()
         self.buffer_data()
         while (self.player_alive or self.waiting_for_goodbye):
             self.keep_the_buffer_full()

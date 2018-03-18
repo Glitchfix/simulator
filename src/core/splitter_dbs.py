@@ -28,7 +28,7 @@ import logging
 class Splitter_DBS(Simulator_stuff):
     MAX_NUMBER_OF_LOST_CHUNKS = 32
 
-    def __init__(self):
+    def __init__(self,id="S"):
 
         # lg.basicConfig(level=lg.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
         self.lg = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class Splitter_DBS(Simulator_stuff):
         self.lg.info('Informative message enabled.')
         self.lg.debug('Low-level debug message enabled.')
 
-        self.id = "S"
+        self.id = id
         self.alive = True  # While True, keeps the splitter alive
         self.chunk_number = 0  # First chunk (number) to send
         self.peer_list = []  # Current peers in the team
@@ -244,7 +244,20 @@ class Splitter_DBS(Simulator_stuff):
     def start(self):
         Thread(target=self.run).start()
 
+    def notify_tracker(self):
+        self.tracker_socket = socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        # self.splitter_socket.set_id(self.id) # Ojo, simulation dependant
+        self.tracker_socket.bind(self.id)
+        try:
+            self.tracker_socket.connect("T")
+            self.tracker_socket.send("*ST")
+            msg=self.splitter_recv()
+        except ConnectionRefusedError as e:
+            self.lg.error("{}: {}".format(self.id, e))
+            raise
+        print(msg)
     def run(self):
+        self.notify_tracker()
         self.setup_peer_connection_socket()
         self.setup_team_socket()
 
