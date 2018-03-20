@@ -28,6 +28,7 @@ class Tracker(Simulator_stuff):
 	lg = logging.getLogger(__name__)
 	def __init__(self,s="T"):
 		self.id = s
+		self.alive=True
 		self.splitter_list=[]
     
 	def setup_tracker_connection_socket(self):
@@ -41,15 +42,20 @@ class Tracker(Simulator_stuff):
 		
 		self.lg.info("{}: accepted connection from peer {}".format(self.id, incoming_peer))
 		
-		msg = serve_socket.recv()
+		msg,peer = serve_socket.recvfrom(100)
+		print(msg,peer)
 		if msg=="*PT":
+			print("Tracker received"+msg)
 			msg=splitter_id()
+			peer=incoming_peer
 		elif msg[:3]=="*ST":
-			add_splitter(msg[3:])
-			msg="Splitter joined"
-		self.lg.info("{}: received {} from {}".format(self.id, message, incoming_peer))
+			print("Tracker received"+msg)
+			self.add_splitter(msg[3:])
+			msg="SPJ"
+			peer=msg[3:]
+		self.lg.info("Tracker {}: received {} from {}".format(self.id, msg, incoming_peer))
 		
-		serve_socket.sendto(msg,peer)
+		serve_socket.sendto(msg,peer+"_tcp")
 		# S I M U L A T I O N
 		Simulator_stuff.FEEDBACK["DRAW"].put(("O", "Node", "IN", incoming_peer))
 		'''
@@ -64,9 +70,9 @@ class Tracker(Simulator_stuff):
 
 	def handle_arrivals(self):
 		while self.alive:
-			serve_socket, peer = self.peer_connection_socket.accept()
-			serve_socket = socket(sock=peer_serve_socket)
-			#peer_serve_socket.set_id(peer)
+			serve_socket, peer = self.tracker_connection_socket.accept()
+			serve_socket = socket(sock=serve_socket)
+			#peer_serve_socket.set_id(peer)	
 			self.lg.info("{}: connection from {}".format(self.id, peer))
 			Thread(target=self.handle_conn_arrival, args=((serve_socket, peer),)).start()
         
@@ -85,9 +91,9 @@ class Tracker(Simulator_stuff):
 		return s
 	
 	def run(self):
-		self.setup_peer_connection_socket()
-		self.setup_team_socket()
+		self.setup_tracker_connection_socket()
+		#self.setup_team_socket()
 		Thread(target=self.handle_arrivals).start()
-		Thread(target=self.add-splitter).start()
-		Thread(target=self.splitter_id).start()
+		#Thread(target=self.add_splitter).start()
+		#Thread(target=self.splitter_id).start()
 		

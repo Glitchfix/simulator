@@ -26,6 +26,8 @@ import platform
 import os
 import logging
 
+#TCS
+from core.tracker import Tracker
 
 # import logging as lg
 
@@ -76,7 +78,7 @@ class Simulator():
     def run_a_splitter(self,id):
         Common.BUFFER_SIZE = self.get_buffer_size()
         if self.set_of_rules == "dbs":
-            splitter = Splitter_DBS()
+            splitter = Splitter_DBS(id)
         elif self.set_of_rules == "cis":
             splitter = Splitter_STRPEDS()
         elif self.set_of_rules == "cis-sss":
@@ -114,10 +116,11 @@ class Simulator():
             if self.set_of_rules == "dbs":
                 peer = Peer_DBS(id)
             elif self.set_of_rules == "cis":
-                peer = Peer_STRPEDS(id)
+                peer = Peer_STRPEDS()
             elif self.set_of_rules == "cis-sss":
-                peer = Peer_SSS(id)
-            elif self.set_of_rules == "tcs":
+                peer = Peer_SSS()
+            #elif self.set_of_rules == "tcs":
+            else:
                 print("Okay done here")
                 peer=Peer_DBS("T")
         self.lg.info("simulator: {}: alive till consuming {} chunks".format(id, chunks_before_leave))
@@ -165,7 +168,10 @@ class Simulator():
         drawing_log_file.write("Bye")
         self.lg.info("CLOSING STORE")
         drawing_log_file.close()
-
+    def run_a_tracker(self):
+        self.tracker=Tracker()
+        self.tracker.run()
+    
     def run(self):
         self.lg.info("simulator: platform.system() = {}".format(platform.system()))
         # if __debug__:
@@ -200,6 +206,13 @@ class Simulator():
         # Automatic bitrate control only for CIS-SSS
         sim.RECV_LIST = manager.dict()
         # sim.LOCK = Semaphore()
+        
+        #Tracker
+        t=Process(target=self.run_a_tracker)
+        t.start()
+        self.processes["T0"]=t.pid
+        self.lg.info("Tracker started")
+        
 
         # run splitter
         p = Process(target=self.run_a_splitter,args=["S0"])
@@ -218,7 +231,7 @@ class Simulator():
         self.attended_mps = 0
 
         # run a monitor
-        p = Process(target=self.run_a_peer, args=["S", "monitor", "M" + str(self.attended_monitors + 0), True])
+        p = Process(target=self.run_a_peer, args=["T", "monitor", "M" + str(self.attended_monitors + 0), True])
         p.start()
         self.processes["M" + str(self.attended_monitors + 1)] = p.pid
         self.attended_monitors += 1
@@ -259,7 +272,7 @@ class Simulator():
                 self.attended_monitors += 1
         elif option == 1:
             if self.attended_peers < self.number_of_peers:
-                p = Process(target=self.run_a_peer, args=["S", "peer", "P" + str(self.attended_peers + 1)])
+                p = Process(target=self.run_a_peer, args=["T", "peer", "P" + str(self.attended_peers + 1)])
                 p.start()
                 self.processes["P" + str(self.attended_peers + 1)] = p.pid
                 self.attended_peers += 1

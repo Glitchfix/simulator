@@ -126,6 +126,7 @@ class Simulator_socket:
         self.lg.info("simulator_stuff.bind({}): {}".format(address, self.sock))
         if self.type == self.SOCK_STREAM:
             try:
+                print(address)
                 return self.sock.bind(address + "_tcp")
             except:
                 self.lg.error("{}: when binding address \"{}\"".format(sys.exc_info()[0], address + "_tcp"))

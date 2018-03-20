@@ -250,8 +250,9 @@ class Splitter_DBS(Simulator_stuff):
         self.tracker_socket.bind(self.id)
         try:
             self.tracker_socket.connect("T")
-            self.tracker_socket.send("*ST")
-            msg=self.splitter_recv()
+            self.tracker_socket.send(("*ST"+self.id).encode())
+            msg=self.tracker_socket.recvfrom(100)
+            print(msg)
         except ConnectionRefusedError as e:
             self.lg.error("{}: {}".format(self.id, e))
             raise
