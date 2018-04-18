@@ -122,8 +122,9 @@ class Simulator():
             #elif self.set_of_rules == "tcs":
             else:
                 print("Okay done here")
-                peer=Peer_DBS("T")
+                peer=Peer_DBS(id)
         self.lg.info("simulator: {}: alive till consuming {} chunks".format(id, chunks_before_leave))
+        print(type)
 
         peer.chunks_before_leave = chunks_before_leave
         peer.set_splitter(splitter_id)
@@ -231,10 +232,11 @@ class Simulator():
         self.attended_mps = 0
 
         # run a monitor
-        p = Process(target=self.run_a_peer, args=["T", "monitor", "M" + str(self.attended_monitors + 0), True])
+        #p = Process(target=self.run_a_peer, args=["S", "peer", "M" + str(self.attended_monitors + 0), True])
+        p = Process(target=self.run_a_peer, args=["T", "peer", "P" + str(self.attended_peers + 0),True])
         p.start()
-        self.processes["M" + str(self.attended_monitors + 1)] = p.pid
-        self.attended_monitors += 1
+        self.processes["P" + str(self.attended_peers + 1)] = p.pid
+        self.attended_peers += 1
 
         queue = sim.FEEDBACK["STATUS"]
         m = queue.get()
