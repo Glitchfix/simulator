@@ -78,13 +78,13 @@ class Simulator():
     def run_a_splitter(self,id):
         Common.BUFFER_SIZE = self.get_buffer_size()
         if self.set_of_rules == "dbs":
-            splitter = Splitter_DBS(id)
+            splitter = Splitter_DBS()
         elif self.set_of_rules == "cis":
             splitter = Splitter_STRPEDS()
         elif self.set_of_rules == "cis-sss":
             splitter = Splitter_SSS()
         elif self.set_of_rules == "tcs":
-            splitter = Splitter_DBS(id)	
+            splitter = Splitter_DBS()	
 
         # splitter.start()
         splitter.run()
@@ -124,7 +124,6 @@ class Simulator():
                 print("Okay done here")
                 peer=Peer_DBS(id)
         self.lg.info("simulator: {}: alive till consuming {} chunks".format(id, chunks_before_leave))
-        print(type)
 
         peer.chunks_before_leave = chunks_before_leave
         peer.set_splitter(splitter_id)

@@ -28,7 +28,7 @@ import logging
 class Splitter_DBS(Simulator_stuff):
     MAX_NUMBER_OF_LOST_CHUNKS = 32
 
-    def __init__(self,id="S"):
+    def __init__(self,s="S"):
 
         # lg.basicConfig(level=lg.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
         self.lg = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class Splitter_DBS(Simulator_stuff):
         self.lg.info('Informative message enabled.')
         self.lg.debug('Low-level debug message enabled.')
 
-        self.id = id
+        self.s = s
         self.alive = True  # While True, keeps the splitter alive
         self.chunk_number = 0  # First chunk (number) to send
         self.peer_list = []  # Current peers in the team
@@ -59,18 +59,18 @@ class Splitter_DBS(Simulator_stuff):
         # S I M U L A T I O N 
         self.current_round = 0  # Number of round (maybe not here).
 
-        self.lg.info("{}: initialized".format(self.id))
+        self.lg.info("{}: initialized".format(self.s))
 
     def setup_peer_connection_socket(self):
         self.peer_connection_socket = socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        # self.peer_connection_socket.set_id(self.id)
-        self.peer_connection_socket.bind(self.id)
+        # self.peer_connection_socket.set_id(self.s)
+        self.peer_connection_socket.bind(self.s)
         self.peer_connection_socket.listen(1)
 
     def setup_team_socket(self):
         self.team_socket = socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-        # self.team_socket.set_id(self.id)
-        self.team_socket.bind(self.id)
+        # self.team_socket.set_id(self.s)
+        self.team_socket.bind(self.s)
         # self.team_socket.set_max_packet_size(struct.calcsize("is3s")) # Chunck index, chunk, origin
 
     def send_chunk(self, chunk_msg, peer):
@@ -90,7 +90,7 @@ class Splitter_DBS(Simulator_stuff):
             peer_serve_socket, peer = self.peer_connection_socket.accept()
             peer_serve_socket = socket(sock=peer_serve_socket)
             # peer_serve_socket.set_id(peer)
-            self.lg.info("{}: connection from {}".format(self.id, peer))
+            self.lg.info("{}: connection from {}".format(self.s, peer))
             Thread(target=self.handle_a_peer_arrival, args=((peer_serve_socket, peer),)).start()
 
     def handle_a_peer_arrival(self, connection):
@@ -98,18 +98,18 @@ class Splitter_DBS(Simulator_stuff):
         serve_socket = connection[0]
         incoming_peer = connection[1]
 
-        self.lg.info("{}: accepted connection from peer {}".format(self.id, incoming_peer))
+        self.lg.info("{}: accepted connection from peer {}".format(self.s, incoming_peer))
 
         self.send_buffer_size(serve_socket)
         self.send_the_number_of_peers(serve_socket)
         self.send_the_list_of_peers(serve_socket)
 
-        self.lg.info("{}: waiting for incoming peer".format(self.id))
+        self.lg.info("{}: waiting for incoming peer".format(self.s))
 
         msg_length = struct.calcsize("s")
         msg = serve_socket.recv(msg_length)
         message = struct.unpack("s", msg)[0]
-        self.lg.info("{}: received {} from {}".format(self.id, message, incoming_peer))
+        self.lg.info("{}: received {} from {}".format(self.s, message, incoming_peer))
 
         self.insert_peer(incoming_peer)
 
@@ -118,28 +118,28 @@ class Splitter_DBS(Simulator_stuff):
 
         if (incoming_peer[0] == "M"):
             self.number_of_monitors += 1
-        self.lg.info("{}: number of monitors = {}".format(self.id, self.number_of_monitors))
+        self.lg.info("{}: number of monitors = {}".format(self.s, self.number_of_monitors))
 
         serve_socket.close()
 
     def send_buffer_size(self, peer_serve_socket):
-        self.lg.info("{}: buffer size = {}".format(self.id, self.buffer_size))
+        self.lg.info("{}: buffer size = {}".format(self.s, self.buffer_size))
         # peer_serve_socket.sendall(self.buffer_size, "H")
         msg = struct.pack("H", self.buffer_size)
         peer_serve_socket.sendall(msg)
 
     def send_the_number_of_peers(self, peer_serve_socket):
-        self.lg.info("{}: sending number of monitors = {}".format(self.id, self.number_of_monitors))
+        self.lg.info("{}: sending number of monitors = {}".format(self.s, self.number_of_monitors))
         # peer_serve_socket.sendall(self.number_of_monitors, "H")
         msg = struct.pack("H", self.number_of_monitors)
         peer_serve_socket.sendall(msg)
-        self.lg.info("{}: sending list of peers of length = {}".format(self.id, len(self.peer_list)))
+        self.lg.info("{}: sending list of peers of length = {}".format(self.s, len(self.peer_list)))
         # peer_serve_socket.sendall(len(self.peer_list), "H")
         msg = struct.pack("H", len(self.peer_list))
         peer_serve_socket.sendall(msg)
 
     def send_the_list_of_peers(self, peer_serve_socket):
-        self.lg.info("{}: sending peer list = {}".format(self.id, self.peer_list))
+        self.lg.info("{}: sending peer list = {}".format(self.s, self.peer_list))
         for p in self.peer_list:
             # peer_serve_socket.sendall(p, "6s")
             msg = struct.pack("6s", bytes(p, "utf-8"))
@@ -149,7 +149,7 @@ class Splitter_DBS(Simulator_stuff):
         if peer not in self.peer_list:
             self.peer_list.append(peer)
         self.losses[peer] = 0
-        self.lg.info("{}: {} inserted in the team".format(self.id, peer))
+        self.lg.info("{}: {} inserted in the team".format(self.s, peer))
 
     def increment_unsupportivity_of_peer(self, peer):
         try:
@@ -157,9 +157,9 @@ class Splitter_DBS(Simulator_stuff):
         except KeyError:
             self.lg.error("{}: unexpected error, the unsupportive peer {} does not exist!".format(peer))
         else:
-            self.lg.info("{}: peer {} has lost {} chunks".format(self.id, peer, self.losses[peer]))
+            self.lg.info("{}: peer {} has lost {} chunks".format(self.s, peer, self.losses[peer]))
             if self.losses[peer] > Common.MAX_CHUNK_LOSS:
-                self.lg.info("{}: {} removed".format(self.id, peer))
+                self.lg.info("{}: {} removed".format(self.s, peer))
                 self.remove_peer(peer)
         finally:
             pass
@@ -167,7 +167,7 @@ class Splitter_DBS(Simulator_stuff):
     def process_lost_chunk(self, lost_chunk_number, sender):
         destination = self.get_losser(lost_chunk_number)
         self.lg.info(
-            "{}: sender {} complains about lost chunk {} with destination {}".format(self.id, sender, lost_chunk_number,
+            "{}: sender {} complains about lost chunk {} with destination {}".format(self.s, sender, lost_chunk_number,
                                                                                      destination))
         self.increment_unsupportivity_of_peer(destination)
 
@@ -181,7 +181,7 @@ class Splitter_DBS(Simulator_stuff):
         try:
             self.peer_list.remove(peer)
         except ValueError:
-            self.lg.error("{}: unexpected error, the removed peer {} does not exist!".format(self.id, peer))
+            self.lg.error("{}: unexpected error, the removed peer {} does not exist!".format(self.s, peer))
         else:
             # self.peer_number -= 1
             # S I M U L A T I O N
@@ -192,16 +192,16 @@ class Splitter_DBS(Simulator_stuff):
         try:
             del self.losses[peer]
         except KeyError:
-            self.lg.error("{}: unexpected error, the removed peer {} does not exist in losses".format(self.id, peer))
+            self.lg.error("{}: unexpected error, the removed peer {} does not exist in losses".format(self.s, peer))
         finally:
             pass
 
     def process_goodbye(self, peer):
-        self.lg.info("{}: received [goodbye] from".format(self.id, peer))
+        self.lg.info("{}: received [goodbye] from".format(self.s, peer))
         if peer not in self.outgoing_peer_list:
             if peer in self.peer_list:
                 self.outgoing_peer_list.append(peer)
-                self.lg.info("{}: marked for deletion".format(self.id, peer))
+                self.lg.info("{}: marked for deletion".format(self.s, peer))
 
     def say_goodbye(self, peer):
         # self.team_socket.sendto(Common.GOODBYE, "i" , peer)
@@ -219,8 +219,8 @@ class Splitter_DBS(Simulator_stuff):
 
     def moderate_the_team(self):
         while self.alive:
-            # message, sender = self.team_socket.recvfrom()
-            msg, sender = self.team_socket.recvfrom(100)
+            message, sender = self.team_socket.recvfrom()
+            #msg, sender = self.team_socket.recvfrom(100)
             if len(msg) == 2:
                 # msg = struct.unpack("i", packed_msg)
                 self.process_goodbye(sender)
@@ -246,15 +246,14 @@ class Splitter_DBS(Simulator_stuff):
 
     def notify_tracker(self):
         self.tracker_socket = socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        # self.splitter_socket.set_id(self.id) # Ojo, simulation dependant
-        self.tracker_socket.bind(self.id)
+        # self.splitter_socket.set_id(self.s) # Ojo, simulation dependant
         try:
             self.tracker_socket.connect("T")
-            self.tracker_socket.send(("*ST"+self.id).encode())
-            msg=self.tracker_socket.recvfrom(100)
+            self.tracker_socket.send(("*ST"+self.s).encode())
+            msg=self.tracker_socket.recv(1024)
             print(msg)
         except ConnectionRefusedError as e:
-            self.lg.error("{}: {}".format(self.id, e))
+            self.lg.error("{}: {}".format(self.s, e))
             raise
         print(msg)
     def run(self):
@@ -279,7 +278,7 @@ class Splitter_DBS(Simulator_stuff):
                 self.on_round_beginning()  # Remove outgoing peers
 
                 # S I M U L A T I O N
-                self.lg.info("{}: current round {}".format(self.id, self.current_round))
+                self.lg.info("{}: current round {}".format(self.s, self.current_round))
                 Simulator_stuff.FEEDBACK["STATUS"].put(("R", self.current_round))
                 Simulator_stuff.FEEDBACK["DRAW"].put(("R", self.current_round))
                 Simulator_stuff.FEEDBACK["DRAW"].put(("T", "M", self.number_of_monitors, self.current_round))
@@ -299,9 +298,9 @@ class Splitter_DBS(Simulator_stuff):
             self.compute_next_peer_number(peer)
 
             #            except IndexError:
-            #                self.lg.error("{}: the monitor peer has died!".format(self.id))
-            #                self.lg.error("{}: peer_list = {}".format(self.id, self.peer_list))
-            #                self.lg.error("{}: peer_number = {}".format(self.id, self.peer_number))
+            #                self.lg.error("{}: the monitor peer has died!".format(self.s))
+            #                self.lg.error("{}: peer_list = {}".format(self.s, self.peer_list))
+            #                self.lg.error("{}: peer_number = {}".format(self.s, self.peer_number))
 
             # S I M U L A T I O N
             if self.peer_number == 0:

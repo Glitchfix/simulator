@@ -90,6 +90,7 @@ class Simulator_socket:
                                               msg, \
                                               address))
         try:
+            print(address)
             return self.sock.sendto(msg, socket.MSG_DONTWAIT, address + "_udp")
         except ConnectionRefusedError:
             self.lg.error(
@@ -120,7 +121,7 @@ class Simulator_socket:
     def accept(self):
         self.lg.info("simulator_stuff.accept(): {}".format(self.sock))
         peer_serve_socket, peer = self.sock.accept()
-        return (peer_serve_socket, peer.replace("_tcp", "").replace("udp", ""))
+        return (peer_serve_socket, str(peer).replace("_tcp", "").replace("udp", ""))
 
     def bind(self, address):
         self.lg.info("simulator_stuff.bind({}): {}".format(address, self.sock))
