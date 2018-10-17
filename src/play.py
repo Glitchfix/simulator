@@ -8,21 +8,26 @@ import matplotlib.cm as cm
 import numpy as np
 import logging
 
+
 class Play():
-    
+
     def __init__(self, drawing_log):
         self.drawing_log = drawing_log
+        self.Type = {}
+        logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        self.lg = logging.getLogger(__name__)
+        self.lg.setLevel(logging.DEBUG)
 
     def get_team_size(self, n):
         return 2 ** (n - 1).bit_length()
-        
+
     def get_buffer_size(self):
         team_size = self.get_team_size((self.number_of_monitors + self.number_of_peers + self.number_of_malicious) * 8)
         if (team_size < 32):
             return 32
         else:
             return team_size
-        
+
     def draw_net(self):
         self.G = nx.Graph()
         self.net_labels = {}
@@ -34,14 +39,14 @@ class Play():
         # self.lg.info("Update net", node, edge, direction)
         if node:
             self.net_labels[node] = node
-            if node[0] == "M" and node[1] == "P":
+            if node in self.Type and self.Type[node] == "MP":
                 if direction == "IN":
                     self.G.add_node(node, behaviour='malicious')
                 else:
                     self.lg.info("simulator: {} removed from graph (MP)".format(node))
                     self.G.remove_node(node)
                     del self.net_labels[node]
-            elif node[0] == "M":
+            elif node in self.Type and self.Type[node] == "M":
                 if direction == "IN":
                     self.G.add_node(node, behaviour='monitor')
                 else:
@@ -85,16 +90,16 @@ class Play():
 
     def update_team(self, node, quantity, n_round):
         if node == "M":
-            self.lineMonitors.set_xdata(n_round)
-            self.lineMonitors.set_ydata(quantity)
+            self.lineMonitors.set_xdata(float(n_round))
+            self.lineMonitors.set_ydata(float(quantity))
             self.team_ax.draw_artist(self.lineMonitors)
         elif node == "P":
-            self.lineWIPs.set_xdata(n_round)
-            self.lineWIPs.set_ydata(quantity)
+            self.lineWIPs.set_xdata(float(n_round))
+            self.lineWIPs.set_ydata(float(quantity))
             self.team_ax.draw_artist(self.lineWIPs)
         else:
-            self.lineMPs.set_xdata(n_round)
-            self.lineMPs.set_ydata(quantity)
+            self.lineMPs.set_xdata(float(n_round))
+            self.lineMPs.set_ydata(float(quantity))
             self.team_ax.draw_artist(self.lineMPs)
 
         self.team_figure.canvas.blit(self.team_ax.bbox)
@@ -135,7 +140,7 @@ class Play():
         self.buffer_ax.draw_artist(self.lineOUT)
 
         buffer_in = [pos for pos, char in enumerate(senders_list) if char != ""]
-        
+
         self.lineIN.set_xdata([self.buffer_order[node]] * len(buffer_in))
         
         for pos in buffer_in:
@@ -150,7 +155,7 @@ class Play():
                 self.lineIN.set_color("#000000")
             self.lineIN.set_ydata(pos)
             self.buffer_ax.draw_artist(self.lineIN)
-        
+
         self.buffer_figure.canvas.blit(self.buffer_ax.bbox)
 
     def plot_clr(self):
@@ -163,12 +168,12 @@ class Play():
         self.clr_figure.canvas.draw()
 
     def update_clrs(self, peer, clr):
-        if peer[:2] != "MP":
+        if peer in self.Type and self.Type[peer] != "MP":
             self.clrs_per_round.append(clr)
 
     def update_clr_plot(self, n_round):
         if len(self.clrs_per_round) > 0:
-            self.lineCLR.set_xdata(n_round)
+            self.lineCLR.set_xdata(float(n_round))
             self.lineCLR.set_ydata(np.mean(self.clrs_per_round))
             self.clr_ax.draw_artist(self.lineCLR)
             self.clr_figure.canvas.blit(self.clr_ax.bbox)
@@ -200,6 +205,8 @@ class Play():
         line = drawing_log_file.readline()
         while line != "Bye":
             m = line.strip().split(";", 4)
+            if m[0] == "MAP":
+                self.Type[m[1]] = m[2]
             if m[0] == "O":
                 if m[1] == "Node":
                     if m[2] == "IN":
@@ -232,13 +239,6 @@ class Play():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    # lg.critical('Critical messages enabled.')
-    # lg.error('Error messages enabled.')
-    # lg.warning('Warning message enabled.')
-    # lg.info('Informative message enabled.')
-    # lg.debug('Low-level debug message enabled.')
 
     fire.Fire(Play)
-
     logging.shutdown()
